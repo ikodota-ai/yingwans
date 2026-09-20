@@ -45,3 +45,11 @@ nbdist/
 !*/build/*.java
 !*/build/*.html
 !*/build/*.xml
+
+# 生产密钥配置（勿提交）
+ruoyi-admin/src/main/resources/application-prod.yml
+
+# 系统/工具产物
+.DS_Store
+.playwright-cli/
+ruoyi-ui/dist.zip

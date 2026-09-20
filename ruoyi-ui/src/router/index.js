@@ -51,6 +51,34 @@ export const constantRoutes = [
     component: () => import('@/views/register'),
     hidden: true
   },
+  // 影弯前台用户登录/注册（独立页，前台用户专用）
+  {
+    path: '/portal-login',
+    component: () => import('@/views/portal/Login'),
+    hidden: true
+  },
+  {
+    path: '/portal-register',
+    component: () => import('@/views/portal/Register'),
+    hidden: true
+  },
+  // 影弯前台（对外，无需登录即可浏览）
+  {
+    path: '/portal',
+    component: () => import('@/views/portal/Layout'),
+    hidden: true,
+    redirect: '/discover',
+    children: [
+      { path: '/discover', component: () => import('@/views/portal/Discover'), name: 'PortalDiscover', meta: { title: '发现' } },
+      { path: '/browse', component: () => import('@/views/portal/Browse'), name: 'PortalBrowse', meta: { title: '浏览筛选' } },
+      { path: '/collections', component: () => import('@/views/portal/Collections'), name: 'PortalCollections', meta: { title: '片单' } },
+      { path: '/collection/:collectionId(\\d+)', component: () => import('@/views/portal/CollectionDetail'), name: 'PortalCollectionDetail', meta: { title: '片单详情' } },
+      { path: '/film/:mediaId(\\d+)', component: () => import('@/views/portal/FilmDetail'), name: 'PortalFilmDetail', meta: { title: '影片详情' } },
+      { path: '/person/:personId(\\d+)', component: () => import('@/views/portal/PersonDetail'), name: 'PortalPersonDetail', meta: { title: '人物详情' } },
+      { path: '/library', component: () => import('@/views/portal/Library'), name: 'PortalLibrary', meta: { title: '我的片库' } },
+      { path: '/subscriptions', component: () => import('@/views/portal/Subscriptions'), name: 'PortalSubscriptions', meta: { title: '订阅提醒' } }
+    ]
+  },
   {
     path: '/404',
     component: () => import('@/views/error/404'),
@@ -61,18 +89,30 @@ export const constantRoutes = [
     component: () => import('@/views/error/401'),
     hidden: true
   },
+  // 根路径默认进入影弯影院前台
   {
     path: '',
+    redirect: '/discover'
+  },
+  // 后台管理首页：/admin（未登录由权限守卫跳转 /login）
+  {
+    path: '/admin',
     component: Layout,
-    redirect: 'index',
+    redirect: '/admin/index',
     children: [
       {
         path: 'index',
         component: () => import('@/views/index'),
-        name: 'Index',
+        name: 'AdminIndex',
         meta: { title: '首页', icon: 'dashboard', affix: true }
       }
     ]
+  },
+  // 兼容旧的后台首页路径
+  {
+    path: '/index',
+    redirect: '/admin',
+    hidden: true
   },
   {
     path: '/lock',

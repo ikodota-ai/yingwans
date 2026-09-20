@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.kemovie.mapper.KmMediaMapper">
+
+    <resultMap type="KmMedia" id="KmMediaResult">
+        <id     property="mediaId"        column="media_id"/>
+        <result property="tmdbId"         column="tmdb_id"/>
+        <result property="mediaType"      column="media_type"/>
+        <result property="imdbId"         column="imdb_id"/>
+        <result property="mdlId"          column="mdl_id"/>
+        <result property="letterboxdSlug" column="letterboxd_slug"/>
+        <result property="legacyAid"      column="legacy_aid"/>
+        <result property="title"          column="title"/>
+        <result property="originalTitle"  column="original_title"/>
+        <result property="overview"       column="overview"/>
+        <result property="posterPath"     column="poster_path"/>
+        <result property="posterLocalUrl" column="poster_local_url"/>
+        <result property="backdropLocalUrl" column="backdrop_local_url"/>
+        <result property="backdropPath"   column="backdrop_path"/>
+        <result property="releaseDate"    column="release_date"/>
+        <result property="onlineDate"     column="online_date"/>
+        <result property="region"         column="region"/>
+        <result property="genres"         column="genres"/>
+        <result property="tags"           column="tags"/>
+        <result property="source"         column="source"/>
+        <result property="runtime"        column="runtime"/>
+        <result property="voteAverage"    column="vote_average"/>
+        <result property="voteCount"      column="vote_count"/>
+        <result property="popularity"     column="popularity"/>
+        <result property="status"         column="status"/>
+        <result property="likeCount"      column="like_count"/>
+        <result property="wishCount"      column="wish_count"/>
+        <result property="watchedCount"   column="watched_count"/>
+        <result property="ratingAvg"      column="rating_avg"/>
+        <result property="ratingCount"    column="rating_count"/>
+        <result property="hotScore"       column="hot_score"/>
+        <result property="lastSyncedAt"   column="last_synced_at"/>
+        <result property="feishuDocToken" column="feishu_doc_token"/>
+        <result property="feishuDocUrl"   column="feishu_doc_url"/>
+        <result property="tencentDocUrl"  column="tencent_doc_url"/>
+        <result property="visible"        column="visible"/>
+        <result property="delFlag"        column="del_flag"/>
+        <result property="createBy"       column="create_by"/>
+        <result property="createTime"     column="create_time"/>
+        <result property="updateBy"       column="update_by"/>
+        <result property="updateTime"     column="update_time"/>
+        <result property="remark"         column="remark"/>
+    </resultMap>
+
+    <sql id="selectKmMediaVo">
+        select media_id, tmdb_id, media_type, imdb_id, mdl_id, letterboxd_slug, legacy_aid, title, original_title, overview,
+               poster_path, poster_local_url, backdrop_local_url, backdrop_path, release_date, region, genres, tags, source, runtime,
+               vote_average, vote_count, popularity, status, like_count, wish_count, watched_count,
+               rating_avg, rating_count, hot_score, last_synced_at, visible, del_flag,
+               feishu_doc_token, feishu_doc_url, tencent_doc_url,
+               create_by, create_time, update_by, update_time, remark
+        from km_media
+    </sql>
+
+    <select id="selectKmMediaByMediaId" parameterType="Long" resultMap="KmMediaResult">
+        <include refid="selectKmMediaVo"/>
+        where media_id = #{mediaId}
+    </select>
+
+    <select id="selectKmMediaByTmdb" resultMap="KmMediaResult">
+        <include refid="selectKmMediaVo"/>
+        where tmdb_id = #{tmdbId} and media_type = #{mediaType} limit 1
+    </select>
+
+    <select id="selectKmMediaByLegacyAid" parameterType="Long" resultMap="KmMediaResult">
+        <include refid="selectKmMediaVo"/>
+        where legacy_aid = #{legacyAid} limit 1
+    </select>
+
+    <select id="selectKmMediaList" parameterType="KmMedia" resultMap="KmMediaResult">
+        <include refid="selectKmMediaVo"/>
+        <where>
+            del_flag = '0'
+            <if test="title != null and title != ''"> and title like concat('%', #{title}, '%')</if>
+            <if test="mediaType != null and mediaType != ''"> and media_type = #{mediaType}</if>
+            <if test="region != null and region != ''"> and region like concat('%', #{region}, '%')</if>
+            <if test="genres != null and genres != ''"> and genres like concat('%', #{genres}, '%')</if>
+            <if test="visible != null and visible != ''"> and visible = #{visible}</if>
+            <if test="mdlId != null and mdlId != ''"> and mdl_id = #{mdlId}</if>
+            <if test="letterboxdSlug != null and letterboxdSlug != ''"> and letterboxd_slug = #{letterboxdSlug}</if>
+        </where>
+        order by media_id desc
+    </select>
+
+    <select id="selectPublicMediaList" parameterType="KmMedia" resultMap="KmMediaResult">
+        select m.media_id, m.tmdb_id, m.media_type, m.imdb_id, m.mdl_id, m.title, m.original_title,
+               m.overview, m.poster_path, m.poster_local_url, m.backdrop_path, m.release_date,
+               m.region, m.genres, m.runtime, m.vote_average, m.vote_count, m.popularity, m.status,
+               m.like_count, m.wish_count, m.watched_count, m.rating_avg, m.rating_count, m.hot_score,
+               m.last_synced_at, m.visible, m.del_flag, m.create_by, m.create_time, m.update_by, m.update_time
+        from km_media m
+        <where>
+            m.del_flag = '0' and m.visible = '0'
+            <if test="(platformNames != null and platformNames.size() > 0) or (platform != null and platform != '') or (offerType != null and offerType != '')">
+                and exists (select 1 from km_media_release r where r.media_id = m.media_id
+                    <if test="platformNames != null and platformNames.size() > 0">
+                        and (
+                        <foreach collection="platformNames" item="pn" separator=" or ">
+                            r.platform like concat(#{pn}, '%')
+                        </foreach>
+                        )
+                    </if>
+                    <if test="(platformNames == null or platformNames.size() == 0) and platform != null and platform != ''"> and r.platform = #{platform}</if>
+                    <if test="offerType != null and offerType != ''"> and r.offer_type = #{offerType}</if>
+                )
+            </if>
+            <if test="title != null and title != ''"> and m.title like concat('%', #{title}, '%')</if>
+            <if test="mediaType != null and mediaType != ''"> and m.media_type = #{mediaType}</if>
+            <if test="region != null and region != ''"> and m.region like concat('%', #{region}, '%')</if>
+            <if test="genres != null and genres != ''"> and m.genres like concat('%', #{genres}, '%')</if>
+            <if test="year != null"> and year(m.release_date) = #{year}</if>
+            <if test="minRating != null">
+                <choose>
+                    <when test="ratingSource == 'tmdb'"> and m.vote_average &gt;= #{minRating}</when>
+                    <when test="ratingSource == 'site'"> and m.rating_avg &gt;= #{minRating}</when>
+                    <otherwise> and (m.rating_avg &gt;= #{minRating} or (coalesce(m.rating_avg, 0) = 0 and m.vote_average &gt;= #{minRating}))</otherwise>
+                </choose>
+            </if>
+            <!-- 上线阶段：即将上线 / 近期上线 / 已完结·经典。
+                 有效上线日 = 平台上线日(优先) 兜底影视首映日 -->
+            <if test="phase == 'upcoming'">
+                and (
+                    coalesce((select min(r.online_date) from km_media_release r where r.media_id = m.media_id), m.release_date) &gt; curdate()
+                    or m.status in ('Planned', 'In Production', 'Post Production')
+                )
+            </if>
+            <if test="phase == 'airing'">
+                and (
+                    (m.media_type = 'tv' and m.status = 'Returning Series')
+                    or (m.media_type = 'movie'
+                        and coalesce((select min(r.online_date) from km_media_release r where r.media_id = m.media_id), m.release_date) &lt;= curdate()
+                        and coalesce((select min(r.online_date) from km_media_release r where r.media_id = m.media_id), m.release_date) &gt;= date_sub(curdate(), interval 60 day))
+                )
+            </if>
+            <if test="phase == 'ended'">
+                and (
+                    (m.media_type = 'tv' and m.status in ('Ended', 'Canceled'))
+                    or (m.media_type = 'movie'
+                        and coalesce((select min(r.online_date) from km_media_release r where r.media_id = m.media_id), m.release_date) is not null
+                        and coalesce((select min(r.online_date) from km_media_release r where r.media_id = m.media_id), m.release_date) &lt; date_sub(curdate(), interval 60 day))
+                )
+            </if>
+        </where>
+        <choose>
+            <!-- 评分排序：贝叶斯加权 WR=(v*R+m*C)/(v+m)，m=25 先验票数，C=6.3 全局均分，
+                 避免小样本(如单人打10分)霸榜；R=站内评分优先兜底TMDB，v=票数合计 -->
+            <when test="sortBy == 'rating'">
+                order by (
+                    (coalesce(m.vote_count,0) + coalesce(m.rating_count,0)) * coalesce(nullif(m.rating_avg,0), m.vote_average, 0)
+                    + 25 * 6.3
+                ) / (coalesce(m.vote_count,0) + coalesce(m.rating_count,0) + 25) desc,
+                (coalesce(m.vote_count,0) + coalesce(m.rating_count,0)) desc</when>
+            <when test="sortBy == 'popular'">order by m.popularity desc, m.hot_score desc</when>
+            <when test="sortBy == 'recent'">order by coalesce((select min(r.online_date) from km_media_release r where r.media_id = m.media_id), m.release_date) desc</when>
+            <when test="sortBy == 'newest'">order by m.create_time desc</when>
+            <otherwise>order by m.hot_score desc, m.popularity desc</otherwise>
+        </choose>
+    </select>
+
+    <select id="selectRecentReleases" resultMap="KmMediaResult">
+        <include refid="selectKmMediaVo"/>
+        where del_flag = '0' and visible = '0' and release_date is not null
+        order by release_date desc
+        limit #{limit}
+    </select>
+
+    <select id="selectRecentCollected" resultMap="KmMediaResult">
+        <include refid="selectKmMediaVo"/>
+        where del_flag = '0' and visible = '0'
+        order by create_time desc, media_id desc
+        limit #{limit}
+    </select>
+
+    <select id="selectNewReleases" resultType="com.ruoyi.kemovie.domain.vo.KmNewRelease">
+        select m.media_id as mediaId, m.title, m.media_type as mediaType,
+               m.poster_path as posterPath, m.poster_local_url as posterLocalUrl,
+               m.release_date as releaseDate, m.region,
+               m.rating_avg as ratingAvg, m.vote_average as voteAverage,
+               r.country, max(r.online_date) as onlineDate,
+               group_concat(distinct r.platform order by r.platform separator ',') as platforms,
+               group_concat(distinct r.offer_type order by r.offer_type separator ',') as offerTypes,
+               max(r.link) as link
+        from km_media_release r
+        join km_media m on m.media_id = r.media_id and m.del_flag = '0' and m.visible = '0'
+        where r.source = 'justwatch'
+          and r.online_date <![CDATA[>=]]> date_sub(curdate(), interval #{days} day)
+          and r.online_date <![CDATA[<=]]> curdate()
+        <if test="country != null and country != ''"> and r.country = #{country}</if>
+        group by m.media_id, r.country
+        order by max(r.online_date) desc, m.media_id desc
+        limit #{limit}
+    </select>
+
+    <select id="selectMediaForReleaseRefresh" resultMap="KmMediaResult">
+        <include refid="selectKmMediaVo"/>
+        where del_flag = '0' and tmdb_id is not null
+          and (
+            status in ('Planned', 'In Production', 'Post Production', 'Returning Series')
+            or coalesce((select min(r.online_date) from km_media_release r where r.media_id = km_media.media_id), release_date) &gt;= date_sub(curdate(), interval 30 day)
+            or media_id in (select s.media_id from km_user_subscription s where s.status = '0' and s.notified = '0')
+          )
+        order by update_time asc, media_id asc
+        limit #{limit}
+    </select>
+
+    <select id="selectAllTmdbMediaIds" resultType="java.lang.Long">
+        select media_id from km_media
+        where del_flag = '0' and tmdb_id is not null
+        <if test="afterId != null"> and media_id &gt; #{afterId}</if>
+        order by media_id asc
+        limit #{limit}
+    </select>
+
+    <select id="selectDistinctYears" resultType="java.lang.Integer">
+        select distinct year(release_date) y from km_media
+        where del_flag = '0' and visible = '0' and release_date is not null
+        order by y desc
+    </select>
+
+    <select id="selectDistinctPlatforms" resultType="java.lang.String">
+        select distinct r.platform from km_media_release r
+        join km_media m on m.media_id = r.media_id and m.del_flag = '0' and m.visible = '0'
+        where r.platform is not null and r.platform <![CDATA[<>]]> ''
+        order by r.platform asc
+    </select>
+
+    <select id="selectDistinctRegions" resultType="java.lang.String">
+        select region from km_media
+        where del_flag = '0' and visible = '0' and region is not null and region <![CDATA[<>]]> ''
+    </select>
+
+    <select id="selectPlatformLogos" resultType="java.util.HashMap">
+        select r.platform as platform, max(r.platform_logo) as logo
+        from km_media_release r
+        join km_media m on m.media_id = r.media_id and m.del_flag = '0' and m.visible = '0'
+        where r.platform is not null and r.platform <![CDATA[<>]]> '' and r.platform_logo is not null
+        group by r.platform
+    </select>
+
+    <select id="selectLocalImageMedia" resultType="java.util.HashMap">
+        select media_id as mediaId, poster_local_url as posterLocalUrl, backdrop_local_url as backdropLocalUrl
+        from km_media
+        where del_flag = '0'
+          and (poster_local_url like '/profile%' or backdrop_local_url like '/profile%')
+    </select>
+
+    <insert id="insertKmMedia" parameterType="KmMedia" useGeneratedKeys="true" keyProperty="mediaId">
+        insert into km_media (
+            tmdb_id, media_type, imdb_id, mdl_id, letterboxd_slug, legacy_aid, title, original_title, overview,
+            poster_path, poster_local_url, backdrop_path, release_date, region, genres, tags, source, runtime,
+            vote_average, vote_count, popularity, status, hot_score, last_synced_at, visible, del_flag,
+            create_by, create_time
+        ) values (
+            #{tmdbId}, #{mediaType}, #{imdbId}, #{mdlId}, #{letterboxdSlug}, #{legacyAid}, #{title}, #{originalTitle}, #{overview},
+            #{posterPath}, #{posterLocalUrl}, #{backdropPath}, #{releaseDate}, #{region}, #{genres}, #{tags}, ifnull(#{source}, 'tmdb'), #{runtime},
+            #{voteAverage}, #{voteCount}, #{popularity}, #{status}, #{hotScore}, #{lastSyncedAt},
+            ifnull(#{visible}, '0'), '0', #{createBy}, sysdate()
+        )
+    </insert>
+
+    <update id="updateKmMedia" parameterType="KmMedia">
+        update km_media
+        <set>
+            <if test="tmdbId != null"> tmdb_id = #{tmdbId},</if>
+            <if test="imdbId != null"> imdb_id = #{imdbId},</if>
+            <if test="mdlId != null"> mdl_id = #{mdlId},</if>
+            <if test="letterboxdSlug != null"> letterboxd_slug = #{letterboxdSlug},</if>
+            <if test="legacyAid != null"> legacy_aid = #{legacyAid},</if>
+            <if test="title != null and title != ''"> title = #{title},</if>
+            <if test="originalTitle != null"> original_title = #{originalTitle},</if>
+            <if test="overview != null"> overview = #{overview},</if>
+            <if test="posterPath != null"> poster_path = #{posterPath},</if>
+            <if test="posterLocalUrl != null"> poster_local_url = #{posterLocalUrl},</if>
+            <if test="backdropLocalUrl != null"> backdrop_local_url = #{backdropLocalUrl},</if>
+            <if test="backdropPath != null"> backdrop_path = #{backdropPath},</if>
+            <if test="releaseDate != null"> release_date = #{releaseDate},</if>
+            <if test="region != null"> region = #{region},</if>
+            <if test="genres != null"> genres = #{genres},</if>
+            <if test="tags != null"> tags = #{tags},</if>
+            <if test="source != null"> source = #{source},</if>
+            <if test="runtime != null"> runtime = #{runtime},</if>
+            <if test="voteAverage != null"> vote_average = #{voteAverage},</if>
+            <if test="voteCount != null"> vote_count = #{voteCount},</if>
+            <if test="popularity != null"> popularity = #{popularity},</if>
+            <if test="status != null"> status = #{status},</if>
+            <if test="lastSyncedAt != null"> last_synced_at = #{lastSyncedAt},</if>
+            <if test="feishuDocToken != null"> feishu_doc_token = #{feishuDocToken},</if>
+            <if test="feishuDocUrl != null"> feishu_doc_url = #{feishuDocUrl},</if>
+            <if test="tencentDocUrl != null"> tencent_doc_url = #{tencentDocUrl},</if>
+            <if test="visible != null"> visible = #{visible},</if>
+            <if test="updateBy != null"> update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where media_id = #{mediaId}
+    </update>
+
+    <update id="refreshAggregates" parameterType="Long">
+        update km_media m set
+            like_count    = (select count(*) from km_user_media_action a where a.media_id = m.media_id and a.liked = '1'),
+            wish_count    = (select count(*) from km_user_media_action a where a.media_id = m.media_id and a.wished = '1'),
+            watched_count = (select count(*) from km_user_media_action a where a.media_id = m.media_id and a.watched = '1'),
+            rating_count  = (select count(*) from km_user_media_action a where a.media_id = m.media_id and a.rating is not null),
+            rating_avg    = ifnull((select round(avg(a.rating),1) from km_user_media_action a where a.media_id = m.media_id and a.rating is not null), 0)
+        where m.media_id = #{mediaId}
+    </update>
+
+    <update id="refreshHotScore" parameterType="Long">
+        update km_media set
+            hot_score = round(
+                like_count * 3
+                + wish_count * 2
+                + watched_count * 2
+                + rating_avg * rating_count * 1.5
+                + popularity * 0.1
+            , 3)
+        where media_id = #{mediaId}
+    </update>
+
+    <delete id="deleteKmMediaByMediaIds" parameterType="Long">
+        update km_media set del_flag = '2' where media_id in
+        <foreach item="mediaId" collection="array" open="(" separator="," close=")">
+            #{mediaId}
+        </foreach>
+    </delete>
+
+    <select id="selectLibrary" resultMap="KmMediaResult">
+        select m.* from km_media m
+        join km_user_media_action a on a.media_id = m.media_id and a.user_id = #{userId}
+        where m.del_flag = '0'
+        <choose>
+            <when test="tab == 'watched'"> and a.watched = '1' </when>
+            <when test="tab == 'rated'"> and a.rating is not null </when>
+            <when test="tab == 'liked'"> and a.liked = '1' </when>
+            <otherwise> and a.wished = '1' </otherwise>
+        </choose>
+        order by a.update_time desc
+    </select>
+</mapper>

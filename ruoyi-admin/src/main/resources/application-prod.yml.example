@@ -1,0 +1,26 @@
+# 复制为 application-prod.yml 并填入真实值（该文件勿提交）
+kemovie:
+  image:
+    storage: oss
+    oss:
+      endpoint: oss-cn-hongkong.aliyuncs.com
+      access-key-id: YOUR_ACCESS_KEY_ID
+      access-key-secret: YOUR_ACCESS_KEY_SECRET
+      bucket-name: your-bucket
+      # 根目录前缀，留空则对象放在 bucket 根
+      dir: ""
+      domain: https://image.your-domain.com
+      public-read: true
+  # 飞书自建应用（影片资源文档自动生成；个人可免费创建飞书企业后建应用）
+  # 应用需开通权限：docx:document、drive:drive、drive:file
+  feishu:
+    app-id: YOUR_FEISHU_APP_ID
+    app-secret: YOUR_FEISHU_APP_SECRET
+    base-url: https://open.feishu.cn
+    link-share: anyone_readable
+  # 微信公众号模板消息（可选；接口测试号个人即可申请）
+  wechat:
+    app-id: YOUR_WECHAT_MP_APP_ID
+    app-secret: YOUR_WECHAT_MP_APP_SECRET
+    template-id: YOUR_WECHAT_MP_TEMPLATE_ID
+    enabled: true

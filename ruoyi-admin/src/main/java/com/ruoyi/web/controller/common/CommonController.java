@@ -17,6 +17,8 @@ import com.ruoyi.common.config.RuoYiConfig;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.file.FileUploadUtils;
+import com.ruoyi.common.utils.file.MimeTypeUtils;
+import com.ruoyi.kemovie.storage.OssUploader;
 import com.ruoyi.common.utils.file.FileUtils;
 import com.ruoyi.framework.config.ServerConfig;
 
@@ -33,6 +35,10 @@ public class CommonController
 
     @Autowired
     private ServerConfig serverConfig;
+
+    /** 仅在 kemovie.image.storage=oss 时存在；为空则走本地磁盘上传 */
+    @Autowired(required = false)
+    private OssUploader ossUploader;
 
     private static final String FILE_DELIMITER = ",";
 
@@ -76,11 +82,22 @@ public class CommonController
     {
         try
         {
-            // 上传文件路径
-            String filePath = RuoYiConfig.getUploadPath();
-            // 上传并返回新文件名称
-            String fileName = FileUploadUtils.upload(filePath, file);
-            String url = serverConfig.getUrl() + fileName;
+            String fileName;
+            String url;
+            if (ossUploader != null)
+            {
+                FileUploadUtils.assertAllowed(file, MimeTypeUtils.DEFAULT_ALLOWED_EXTENSION);
+                url = ossUploader.uploadMultipart(file, "upload");
+                fileName = url;
+            }
+            else
+            {
+                // 上传文件路径
+                String filePath = RuoYiConfig.getUploadPath();
+                // 上传并返回新文件名称
+                fileName = FileUploadUtils.upload(filePath, file);
+                url = serverConfig.getUrl() + fileName;
+            }
             AjaxResult ajax = AjaxResult.success();
             ajax.put("url", url);
             ajax.put("fileName", fileName);
@@ -110,9 +127,20 @@ public class CommonController
             List<String> originalFilenames = new ArrayList<String>();
             for (MultipartFile file : files)
             {
-                // 上传并返回新文件名称
-                String fileName = FileUploadUtils.upload(filePath, file);
-                String url = serverConfig.getUrl() + fileName;
+                String fileName;
+                String url;
+                if (ossUploader != null)
+                {
+                    FileUploadUtils.assertAllowed(file, MimeTypeUtils.DEFAULT_ALLOWED_EXTENSION);
+                    url = ossUploader.uploadMultipart(file, "upload");
+                    fileName = url;
+                }
+                else
+                {
+                    // 上传并返回新文件名称
+                    fileName = FileUploadUtils.upload(filePath, file);
+                    url = serverConfig.getUrl() + fileName;
+                }
                 urls.add(url);
                 fileNames.add(fileName);
                 newFileNames.add(FileUtils.getName(fileName));

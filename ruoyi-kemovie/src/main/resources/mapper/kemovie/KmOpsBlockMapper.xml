@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.kemovie.mapper.KmOpsBlockMapper">
+
+    <resultMap type="KmOpsBlock" id="OpsBlockResult">
+        <id     property="blockId"    column="block_id"/>
+        <result property="blockKey"   column="block_key"/>
+        <result property="title"      column="title"/>
+        <result property="content"    column="content"/>
+        <result property="imageUrl"   column="image_url"/>
+        <result property="link"       column="link"/>
+        <result property="sort"       column="sort"/>
+        <result property="enabled"    column="enabled"/>
+        <result property="createBy"   column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy"   column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark"     column="remark"/>
+    </resultMap>
+
+    <sql id="selectVo">
+        select block_id, block_key, title, content, image_url, link, sort, enabled,
+               create_by, create_time, update_by, update_time, remark
+        from km_ops_block
+    </sql>
+
+    <select id="selectKmOpsBlockById" parameterType="Long" resultMap="OpsBlockResult">
+        <include refid="selectVo"/> where block_id = #{blockId}
+    </select>
+
+    <select id="selectKmOpsBlockList" parameterType="KmOpsBlock" resultMap="OpsBlockResult">
+        <include refid="selectVo"/>
+        <where>
+            <if test="blockKey != null and blockKey != ''"> and block_key = #{blockKey}</if>
+            <if test="title != null and title != ''"> and title like concat('%', #{title}, '%')</if>
+            <if test="enabled != null and enabled != ''"> and enabled = #{enabled}</if>
+        </where>
+        order by sort asc, block_id desc
+    </select>
+
+    <select id="selectEnabledByKey" parameterType="String" resultMap="OpsBlockResult">
+        <include refid="selectVo"/> where block_key = #{blockKey} and enabled = '0' order by sort asc
+    </select>
+
+    <insert id="insertKmOpsBlock" parameterType="KmOpsBlock" useGeneratedKeys="true" keyProperty="blockId">
+        insert into km_ops_block (block_key, title, content, image_url, link, sort, enabled, create_by, create_time, remark)
+        values (#{blockKey}, #{title}, #{content}, #{imageUrl}, #{link}, ifnull(#{sort},0), ifnull(#{enabled},'0'), #{createBy}, sysdate(), #{remark})
+    </insert>
+
+    <update id="updateKmOpsBlock" parameterType="KmOpsBlock">
+        update km_ops_block
+        <set>
+            <if test="blockKey != null and blockKey != ''"> block_key = #{blockKey},</if>
+            <if test="title != null"> title = #{title},</if>
+            <if test="content != null"> content = #{content},</if>
+            <if test="imageUrl != null"> image_url = #{imageUrl},</if>
+            <if test="link != null"> link = #{link},</if>
+            <if test="sort != null"> sort = #{sort},</if>
+            <if test="enabled != null and enabled != ''"> enabled = #{enabled},</if>
+            <if test="updateBy != null"> update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where block_id = #{blockId}
+    </update>
+
+    <delete id="deleteKmOpsBlockByIds" parameterType="Long">
+        delete from km_ops_block where block_id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">#{id}</foreach>
+    </delete>
+</mapper>

@@ -277,9 +277,26 @@ public class SysUserServiceImpl implements ISysUserService
      * @return 结果
      */
     @Override
+    @Transactional
     public boolean registerUser(SysUser user)
     {
-        return userMapper.insertUser(user) > 0;
+        boolean rows = userMapper.insertUser(user) > 0;
+        // 前台自助注册的用户默认分配 common（普通用户）角色，
+        // 以保证影弯前台用户拥有一致的基础权限。
+        if (rows)
+        {
+            SysRole common = roleMapper.checkRoleKeyUnique("common");
+            if (StringUtils.isNotNull(common) && StringUtils.isNotNull(common.getRoleId()))
+            {
+                SysUserRole ur = new SysUserRole();
+                ur.setUserId(user.getUserId());
+                ur.setRoleId(common.getRoleId());
+                List<SysUserRole> list = new ArrayList<SysUserRole>(1);
+                list.add(ur);
+                userRoleMapper.batchUserRole(list);
+            }
+        }
+        return rows;
     }
 
     /**

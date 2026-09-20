@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.kemovie.mapper.KmWishAdminMapper">
+
+    <resultMap type="com.ruoyi.kemovie.domain.vo.KmWishMedia" id="KmWishMediaResult">
+        <id     property="mediaId"        column="media_id"/>
+        <result property="title"          column="title"/>
+        <result property="originalTitle"  column="original_title"/>
+        <result property="mediaType"      column="media_type"/>
+        <result property="posterLocalUrl" column="poster_local_url"/>
+        <result property="releaseDate"    column="release_date"/>
+        <result property="region"         column="region"/>
+        <result property="source"         column="source"/>
+        <result property="wishCount"      column="wish_count"/>
+        <result property="lastWishTime"   column="last_wish_time"/>
+        <result property="resourceCount"  column="resource_count"/>
+        <result property="providerCount"  column="provider_count"/>
+    </resultMap>
+
+    <resultMap type="com.ruoyi.kemovie.domain.vo.KmWishUser" id="KmWishUserResult">
+        <id     property="userId"     column="user_id"/>
+        <result property="username"   column="username"/>
+        <result property="nickname"   column="nickname"/>
+        <result property="wishedTime" column="wished_time"/>
+    </resultMap>
+
+    <select id="selectWishMediaList" parameterType="com.ruoyi.kemovie.domain.vo.KmWishMedia"
+            resultMap="KmWishMediaResult">
+        select m.media_id, m.title, m.original_title, m.media_type, m.poster_local_url,
+               m.release_date, m.region, m.source,
+               count(a.id) as wish_count, max(a.wished_time) as last_wish_time,
+               (select count(*) from km_media_resource r where r.media_id = m.media_id) as resource_count,
+               (select count(*) from km_media_release rl where rl.media_id = m.media_id) as provider_count
+        from km_user_media_action a
+        join km_media m on m.media_id = a.media_id and m.del_flag = '0'
+        where a.wished = '1'
+        <if test="keyword != null and keyword != ''">
+            and (m.title like concat('%', #{keyword}, '%') or m.original_title like concat('%', #{keyword}, '%'))
+        </if>
+        <if test="mediaType != null and mediaType != ''"> and m.media_type = #{mediaType}</if>
+        group by m.media_id, m.title, m.original_title, m.media_type, m.poster_local_url,
+                 m.release_date, m.region, m.source
+        <if test="lackResource != null and lackResource"> having resource_count = 0</if>
+        order by wish_count desc, last_wish_time desc
+    </select>
+
+    <select id="selectWishUsers" parameterType="Long" resultMap="KmWishUserResult">
+        select a.user_id, mb.username, mb.nickname, a.wished_time
+        from km_user_media_action a
+        left join km_member mb on mb.member_id = a.user_id
+        where a.media_id = #{mediaId} and a.wished = '1'
+        order by a.wished_time desc
+        limit 500
+    </select>
+</mapper>

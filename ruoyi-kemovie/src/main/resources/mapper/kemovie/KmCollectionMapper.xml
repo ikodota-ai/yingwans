@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.kemovie.mapper.KmCollectionMapper">
+
+    <resultMap type="KmCollection" id="KmCollectionResult">
+        <id     property="collectionId" column="collection_id"/>
+        <result property="name"         column="name"/>
+        <result property="description"  column="description"/>
+        <result property="source"       column="source"/>
+        <result property="sourceRef"    column="source_ref"/>
+        <result property="coverUrl"     column="cover_url"/>
+        <result property="ownerId"      column="owner_id"/>
+        <result property="itemCount"    column="item_count"/>
+        <result property="isPublic"     column="is_public"/>
+        <result property="delFlag"      column="del_flag"/>
+        <result property="ownerName"    column="owner_name"/>
+        <result property="createBy"     column="create_by"/>
+        <result property="createTime"   column="create_time"/>
+        <result property="updateBy"     column="update_by"/>
+        <result property="updateTime"   column="update_time"/>
+        <result property="remark"       column="remark"/>
+    </resultMap>
+
+    <sql id="selectVo">
+        select c.collection_id, c.name, c.description, c.source, c.source_ref, c.cover_url,
+               c.owner_id, c.item_count, c.is_public, c.del_flag, u.user_name as owner_name,
+               c.create_by, c.create_time, c.update_by, c.update_time, c.remark
+        from km_collection c
+        left join sys_user u on u.user_id = c.owner_id
+    </sql>
+
+    <select id="selectKmCollectionById" parameterType="Long" resultMap="KmCollectionResult">
+        <include refid="selectVo"/>
+        where c.collection_id = #{collectionId}
+    </select>
+
+    <select id="selectBySourceRef" parameterType="String" resultMap="KmCollectionResult">
+        <include refid="selectVo"/>
+        where c.source_ref = #{sourceRef} and c.del_flag = '0' limit 1
+    </select>
+
+    <select id="selectKmCollectionList" parameterType="KmCollection" resultMap="KmCollectionResult">
+        <include refid="selectVo"/>
+        <where>
+            c.del_flag = '0'
+            <if test="name != null and name != ''"> and c.name like concat('%', #{name}, '%')</if>
+            <if test="source != null and source != ''"> and c.source = #{source}</if>
+            <if test="ownerId != null"> and c.owner_id = #{ownerId}</if>
+            <if test="isPublic != null and isPublic != ''"> and c.is_public = #{isPublic}</if>
+        </where>
+        order by c.update_time desc, c.collection_id desc
+    </select>
+
+    <insert id="insertKmCollection" parameterType="KmCollection" useGeneratedKeys="true" keyProperty="collectionId">
+        insert into km_collection (name, description, source, source_ref, cover_url, owner_id, item_count, is_public, del_flag, create_by, create_time, remark)
+        values (#{name}, #{description}, #{source}, #{sourceRef}, #{coverUrl}, #{ownerId}, ifnull(#{itemCount},0), ifnull(#{isPublic},'0'), '0', #{createBy}, sysdate(), #{remark})
+    </insert>
+
+    <update id="updateKmCollection" parameterType="KmCollection">
+        update km_collection
+        <set>
+            <if test="name != null and name != ''"> name = #{name},</if>
+            <if test="description != null"> description = #{description},</if>
+            <if test="coverUrl != null"> cover_url = #{coverUrl},</if>
+            <if test="isPublic != null and isPublic != ''"> is_public = #{isPublic},</if>
+            <if test="itemCount != null"> item_count = #{itemCount},</if>
+            <if test="updateBy != null"> update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where collection_id = #{collectionId}
+    </update>
+
+    <update id="updateItemCount" parameterType="Long">
+        update km_collection set item_count = (select count(*) from km_collection_item i where i.collection_id = #{collectionId})
+        where collection_id = #{collectionId}
+    </update>
+
+    <delete id="deleteKmCollectionByIds" parameterType="Long">
+        update km_collection set del_flag = '2' where collection_id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">#{id}</foreach>
+    </delete>
+
+    <!-- ========== 片单关注 ========== -->
+    <select id="selectFollowedByMember" resultMap="KmCollectionResult">
+        <include refid="selectVo"/>
+        join km_collection_follow f on f.collection_id = c.collection_id and f.member_id = #{memberId}
+        where c.del_flag = '0' and c.is_public = '0'
+        order by f.create_time desc, c.collection_id desc
+    </select>
+
+    <select id="countFollow" resultType="int">
+        select count(1) from km_collection_follow where member_id = #{memberId} and collection_id = #{collectionId}
+    </select>
+
+    <insert id="insertFollow">
+        insert ignore into km_collection_follow (member_id, collection_id, create_time)
+        values (#{memberId}, #{collectionId}, sysdate())
+    </insert>
+
+    <delete id="deleteFollow">
+        delete from km_collection_follow where member_id = #{memberId} and collection_id = #{collectionId}
+    </delete>
+</mapper>

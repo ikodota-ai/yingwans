@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.kemovie.mapper.KmMemberMapper">
+
+    <resultMap type="com.ruoyi.kemovie.domain.KmMember" id="KmMemberResult">
+        <id     property="memberId"   column="member_id"   />
+        <result property="username"   column="username"    />
+        <result property="nickname"   column="nickname"    />
+        <result property="password"   column="password"    />
+        <result property="email"      column="email"       />
+        <result property="wechatOpenid" column="wechat_openid" />
+        <result property="phone"      column="phone"       />
+        <result property="avatar"     column="avatar"      />
+        <result property="sex"        column="sex"         />
+        <result property="status"     column="status"      />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="loginIp"    column="login_ip"    />
+        <result property="loginDate"  column="login_date"  />
+        <result property="remark"     column="remark"      />
+        <result property="createTime" column="create_time" />
+        <result property="updateTime" column="update_time" />
+    </resultMap>
+
+    <sql id="selectMemberVo">
+        select member_id, username, nickname, password, email, wechat_openid, phone, avatar, sex,
+               status, del_flag, login_ip, login_date, remark, create_time, update_time
+        from km_member
+    </sql>
+
+    <select id="selectMemberById" parameterType="Long" resultMap="KmMemberResult">
+        <include refid="selectMemberVo"/>
+        where member_id = #{memberId} and del_flag = '0'
+    </select>
+
+    <select id="selectMemberByUsername" parameterType="String" resultMap="KmMemberResult">
+        <include refid="selectMemberVo"/>
+        where username = #{username} and del_flag = '0'
+    </select>
+
+    <select id="selectMemberList" parameterType="com.ruoyi.kemovie.domain.KmMember" resultMap="KmMemberResult">
+        <include refid="selectMemberVo"/>
+        <where>
+            del_flag = '0'
+            <if test="username != null and username != ''"> and username like concat('%', #{username}, '%')</if>
+            <if test="nickname != null and nickname != ''"> and nickname like concat('%', #{nickname}, '%')</if>
+            <if test="email != null and email != ''"> and email like concat('%', #{email}, '%')</if>
+            <if test="status != null and status != ''"> and status = #{status}</if>
+        </where>
+        order by member_id desc
+    </select>
+
+    <insert id="insertMember" parameterType="com.ruoyi.kemovie.domain.KmMember" useGeneratedKeys="true" keyProperty="memberId">
+        insert into km_member (
+            username, nickname, password, email, phone, avatar, sex, status,
+            del_flag, remark, create_time
+        ) values (
+            #{username}, #{nickname}, #{password}, #{email}, #{phone}, #{avatar},
+            #{sex}, #{status}, '0', #{remark}, sysdate()
+        )
+    </insert>
+
+    <update id="updateMember" parameterType="com.ruoyi.kemovie.domain.KmMember">
+        update km_member
+        <set>
+            <if test="nickname != null"> nickname = #{nickname},</if>
+            <if test="password != null and password != ''"> password = #{password},</if>
+            <if test="email != null"> email = #{email},</if>
+            <if test="wechatOpenid != null"> wechat_openid = #{wechatOpenid},</if>
+            <if test="phone != null"> phone = #{phone},</if>
+            <if test="avatar != null"> avatar = #{avatar},</if>
+            <if test="sex != null"> sex = #{sex},</if>
+            <if test="status != null"> status = #{status},</if>
+            <if test="remark != null"> remark = #{remark},</if>
+            update_time = sysdate()
+        </set>
+        where member_id = #{memberId}
+    </update>
+
+    <update id="updateLoginInfo">
+        update km_member set login_ip = #{loginIp}, login_date = sysdate()
+        where member_id = #{memberId}
+    </update>
+
+    <update id="deleteMemberByIds">
+        update km_member set del_flag = '2' where member_id in
+        <foreach collection="array" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </update>
+
+    <select id="checkUsernameUnique" parameterType="String" resultType="int">
+        select count(1) from km_member where username = #{username} and del_flag = '0' limit 1
+    </select>
+
+</mapper>

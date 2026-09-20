@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.kemovie.mapper.KmMdlSourceMapper">
+
+    <resultMap type="KmMdlSource" id="MdlSourceResult">
+        <id     property="sourceId"           column="source_id"/>
+        <result property="sourceType"         column="source_type"/>
+        <result property="listId"             column="list_id"/>
+        <result property="listUrl"            column="list_url"/>
+        <result property="name"               column="name"/>
+        <result property="regionTag"          column="region_tag"/>
+        <result property="objectType"         column="object_type"/>
+        <result property="maxPage"            column="max_page"/>
+        <result property="targetCollectionId" column="target_collection_id"/>
+        <result property="enabled"            column="enabled"/>
+        <result property="lastRunAt"          column="last_run_at"/>
+        <result property="lastStatus"         column="last_status"/>
+        <result property="createBy"           column="create_by"/>
+        <result property="createTime"         column="create_time"/>
+        <result property="updateTime"         column="update_time"/>
+        <result property="remark"             column="remark"/>
+    </resultMap>
+
+    <sql id="selectVo">
+        select source_id, source_type, list_id, list_url, name, region_tag, object_type, max_page, target_collection_id,
+               enabled, last_run_at, last_status, create_by, create_time, update_time, remark
+        from km_mdl_source
+    </sql>
+
+    <select id="selectKmMdlSourceById" parameterType="Long" resultMap="MdlSourceResult">
+        <include refid="selectVo"/> where source_id = #{sourceId}
+    </select>
+
+    <select id="selectKmMdlSourceList" parameterType="KmMdlSource" resultMap="MdlSourceResult">
+        <include refid="selectVo"/>
+        <where>
+            <if test="sourceType != null and sourceType != ''"> and source_type = #{sourceType}</if>
+            <if test="listId != null and listId != ''"> and list_id = #{listId}</if>
+            <if test="name != null and name != ''"> and name like concat('%', #{name}, '%')</if>
+            <if test="regionTag != null and regionTag != ''"> and region_tag = #{regionTag}</if>
+            <if test="enabled != null and enabled != ''"> and enabled = #{enabled}</if>
+        </where>
+        order by source_id desc
+    </select>
+
+    <select id="selectEnabledSources" resultMap="MdlSourceResult">
+        <include refid="selectVo"/>
+        where enabled = '0' and (source_type = 'mdl' or source_type is null)
+        order by source_id asc
+    </select>
+
+    <select id="selectEnabledByType" resultMap="MdlSourceResult">
+        <include refid="selectVo"/>
+        where enabled = '0' and source_type = #{sourceType}
+        order by source_id asc
+    </select>
+
+    <insert id="insertKmMdlSource" parameterType="KmMdlSource" useGeneratedKeys="true" keyProperty="sourceId">
+        insert into km_mdl_source (source_type, list_id, list_url, name, region_tag, object_type, max_page, target_collection_id, enabled, create_by, create_time, remark)
+        values (ifnull(#{sourceType},'mdl'), #{listId}, #{listUrl}, #{name}, #{regionTag}, #{objectType}, ifnull(#{maxPage},1), #{targetCollectionId}, ifnull(#{enabled},'0'), #{createBy}, sysdate(), #{remark})
+    </insert>
+
+    <update id="updateKmMdlSource" parameterType="KmMdlSource">
+        update km_mdl_source
+        <set>
+            <if test="sourceType != null and sourceType != ''"> source_type = #{sourceType},</if>
+            <if test="listId != null and listId != ''"> list_id = #{listId},</if>
+            <if test="listUrl != null and listUrl != ''"> list_url = #{listUrl},</if>
+            <if test="name != null"> name = #{name},</if>
+            <if test="regionTag != null"> region_tag = #{regionTag},</if>
+            <if test="objectType != null"> object_type = #{objectType},</if>
+            <if test="maxPage != null"> max_page = #{maxPage},</if>
+            <if test="targetCollectionId != null"> target_collection_id = #{targetCollectionId},</if>
+            <if test="enabled != null and enabled != ''"> enabled = #{enabled},</if>
+            <if test="lastRunAt != null"> last_run_at = #{lastRunAt},</if>
+            <if test="lastStatus != null"> last_status = #{lastStatus},</if>
+            update_time = sysdate()
+        </set>
+        where source_id = #{sourceId}
+    </update>
+
+    <delete id="deleteKmMdlSourceByIds" parameterType="Long">
+        delete from km_mdl_source where source_id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">#{id}</foreach>
+    </delete>
+</mapper>

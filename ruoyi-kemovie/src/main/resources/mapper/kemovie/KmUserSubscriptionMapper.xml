@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.kemovie.mapper.KmUserSubscriptionMapper">
+
+    <resultMap type="KmUserSubscription" id="SubResult">
+        <id     property="subId"         column="sub_id"/>
+        <result property="userId"        column="user_id"/>
+        <result property="mediaId"       column="media_id"/>
+        <result property="notifyChannel" column="notify_channel"/>
+        <result property="notified"      column="notified"/>
+        <result property="status"        column="status"/>
+        <result property="createTime"    column="create_time"/>
+        <result property="updateTime"    column="update_time"/>
+    </resultMap>
+
+    <resultMap type="KmUserSubscription" id="SubWithMedia" extends="SubResult">
+        <association property="media" javaType="KmMedia" resultMap="com.ruoyi.kemovie.mapper.KmMediaMapper.KmMediaResult" columnPrefix="m_"/>
+    </resultMap>
+
+    <select id="selectByUserAndMedia" resultMap="SubResult">
+        select sub_id, user_id, media_id, notify_channel, notified, status, create_time, update_time
+        from km_user_subscription where user_id = #{userId} and media_id = #{mediaId} limit 1
+    </select>
+
+    <select id="selectTimelineByUser" parameterType="Long" resultMap="SubWithMedia">
+        select s.sub_id, s.user_id, s.media_id, s.notify_channel, s.notified, s.status, s.create_time, s.update_time,
+               m.media_id as m_media_id, m.title as m_title, m.poster_path as m_poster_path,
+               m.poster_local_url as m_poster_local_url, m.release_date as m_release_date,
+               m.media_type as m_media_type, m.region as m_region, m.status as m_status,
+               coalesce((select min(r.online_date) from km_media_release r where r.media_id = m.media_id), m.release_date) as m_online_date
+        from km_user_subscription s
+        join km_media m on m.media_id = s.media_id
+        where s.user_id = #{userId} and s.status = '0'
+        order by m_online_date asc
+    </select>
+
+    <select id="selectActiveByMedia" parameterType="Long" resultMap="SubResult">
+        select sub_id, user_id, media_id, notify_channel, notified, status, create_time, update_time
+        from km_user_subscription where media_id = #{mediaId} and status = '0' and notified = '0'
+    </select>
+
+    <select id="selectAllActiveByMedia" parameterType="Long" resultMap="SubResult">
+        select sub_id, user_id, media_id, notify_channel, notified, status, create_time, update_time
+        from km_user_subscription where media_id = #{mediaId} and status = '0'
+    </select>
+
+    <select id="selectSummary" resultType="map">
+        select s.media_id as mediaId, m.title as title, m.media_type as mediaType,
+               count(*) as subCount,
+               sum(s.notified = '1') as notifiedCount,
+               max(s.update_time) as lastTime
+        from km_user_subscription s
+        join km_media m on m.media_id = s.media_id
+        where s.status = '0'
+        group by s.media_id, m.title, m.media_type
+        order by subCount desc, lastTime desc
+    </select>
+
+    <select id="selectEvents" resultType="map">
+        select s.sub_id as subId, s.user_id as userId,
+               mem.username as username, mem.nickname as nickname,
+               s.media_id as mediaId, m.title as title,
+               s.status as status, s.create_time as createTime, s.update_time as updateTime
+        from km_user_subscription s
+        left join km_member mem on mem.member_id = s.user_id
+        join km_media m on m.media_id = s.media_id
+        order by s.update_time desc
+    </select>
+
+    <insert id="insertSubscription" parameterType="KmUserSubscription" useGeneratedKeys="true" keyProperty="subId">
+        insert into km_user_subscription (user_id, media_id, notify_channel, notified, status, create_time, update_time)
+        values (#{userId}, #{mediaId}, ifnull(#{notifyChannel},'site,email'), '0', '0', sysdate(), sysdate())
+    </insert>
+
+    <update id="updateSubscription" parameterType="KmUserSubscription">
+        update km_user_subscription
+        <set>
+            <if test="notifyChannel != null"> notify_channel = #{notifyChannel},</if>
+            <if test="notified != null"> notified = #{notified},</if>
+            <if test="status != null"> status = #{status},</if>
+            update_time = sysdate()
+        </set>
+        where user_id = #{userId} and media_id = #{mediaId}
+    </update>
+</mapper>

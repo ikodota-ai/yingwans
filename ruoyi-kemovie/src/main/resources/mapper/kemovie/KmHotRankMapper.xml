@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.kemovie.mapper.KmHotRankMapper">
+
+    <resultMap type="KmHotRank" id="HotRankResult">
+        <id     property="id"           column="id"/>
+        <result property="rankType"     column="rank_type"/>
+        <result property="rankNo"       column="rank_no"/>
+        <result property="mediaId"      column="media_id"/>
+        <result property="hotScore"     column="hot_score"/>
+        <result property="snapshotDate" column="snapshot_date"/>
+        <association property="media" javaType="KmMedia" resultMap="com.ruoyi.kemovie.mapper.KmMediaMapper.KmMediaResult" columnPrefix="m_"/>
+    </resultMap>
+
+    <select id="selectLatestRank" resultMap="HotRankResult">
+        select r.id, r.rank_type, r.rank_no, r.media_id, r.hot_score, r.snapshot_date,
+               m.media_id as m_media_id, m.title as m_title, m.original_title as m_original_title,
+               m.poster_path as m_poster_path, m.poster_local_url as m_poster_local_url,
+               m.backdrop_path as m_backdrop_path, m.release_date as m_release_date,
+               m.media_type as m_media_type, m.region as m_region, m.genres as m_genres,
+               m.vote_average as m_vote_average, m.rating_avg as m_rating_avg, m.hot_score as m_hot_score
+        from km_hot_rank r
+        join km_media m on m.media_id = r.media_id
+        where r.rank_type = #{rankType}
+          and r.snapshot_date = (select max(snapshot_date) from km_hot_rank where rank_type = #{rankType})
+        order by r.rank_no asc
+        limit #{limit}
+    </select>
+
+    <insert id="insertRank" parameterType="KmHotRank">
+        insert into km_hot_rank (rank_type, rank_no, media_id, hot_score, snapshot_date, create_time)
+        values (#{rankType}, #{rankNo}, #{mediaId}, #{hotScore}, #{snapshotDate}, sysdate())
+    </insert>
+
+    <delete id="deleteByType" parameterType="String">
+        delete from km_hot_rank where rank_type = #{rankType}
+    </delete>
+</mapper>

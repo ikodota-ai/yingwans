@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.kemovie.mapper.KmUserMediaActionMapper">
+
+    <resultMap type="KmUserMediaAction" id="ActionResult">
+        <id     property="id"          column="id"/>
+        <result property="userId"      column="user_id"/>
+        <result property="mediaId"     column="media_id"/>
+        <result property="liked"       column="liked"/>
+        <result property="wished"      column="wished"/>
+        <result property="watched"     column="watched"/>
+        <result property="rating"      column="rating"/>
+        <result property="likedTime"   column="liked_time"/>
+        <result property="wishedTime"  column="wished_time"/>
+        <result property="watchedTime" column="watched_time"/>
+        <result property="ratingTime"  column="rating_time"/>
+    </resultMap>
+
+    <select id="selectByUserAndMedia" resultMap="ActionResult">
+        select id, user_id, media_id, liked, wished, watched, rating, liked_time, wished_time, watched_time, rating_time
+        from km_user_media_action where user_id = #{userId} and media_id = #{mediaId} limit 1
+    </select>
+
+    <insert id="insertAction" parameterType="KmUserMediaAction" useGeneratedKeys="true" keyProperty="id">
+        insert into km_user_media_action
+            (user_id, media_id, liked, wished, watched, rating, liked_time, wished_time, watched_time, rating_time, create_time, update_time)
+        values
+            (#{userId}, #{mediaId}, ifnull(#{liked},'0'), ifnull(#{wished},'0'), ifnull(#{watched},'0'), #{rating},
+             #{likedTime}, #{wishedTime}, #{watchedTime}, #{ratingTime}, sysdate(), sysdate())
+    </insert>
+
+    <update id="updateAction" parameterType="KmUserMediaAction">
+        update km_user_media_action
+        <set>
+            <if test="liked != null"> liked = #{liked}, liked_time = #{likedTime},</if>
+            <if test="wished != null"> wished = #{wished}, wished_time = #{wishedTime},</if>
+            <if test="watched != null"> watched = #{watched}, watched_time = #{watchedTime},</if>
+            <if test="rating != null"> rating = #{rating}, rating_time = #{ratingTime},</if>
+            update_time = sysdate()
+        </set>
+        where user_id = #{userId} and media_id = #{mediaId}
+    </update>
+
+    <update id="updateRating">
+        update km_user_media_action set rating = #{rating}, rating_time = #{ratingTime}, update_time = sysdate()
+        where user_id = #{userId} and media_id = #{mediaId}
+    </update>
+</mapper>

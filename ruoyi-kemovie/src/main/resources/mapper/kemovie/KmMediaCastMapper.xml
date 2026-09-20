@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.kemovie.mapper.KmMediaCastMapper">
+
+    <resultMap type="com.ruoyi.kemovie.domain.KmMediaCast" id="KmMediaCastResult">
+        <id     property="id"          column="id"          />
+        <result property="mediaId"     column="media_id"    />
+        <result property="personId"    column="person_id"   />
+        <result property="creditType"  column="credit_type" />
+        <result property="department"  column="department"  />
+        <result property="job"         column="job"         />
+        <result property="character"   column="character_name" />
+        <result property="castOrder"   column="cast_order"  />
+        <result property="createTime"  column="create_time" />
+        <!-- join 展示字段 -->
+        <result property="personName"        column="p_name"          />
+        <result property="profilePath"       column="p_profile_path"  />
+        <result property="profileLocalUrl"   column="p_profile_local" />
+        <result property="personTmdbId"      column="p_tmdb_id"       />
+        <result property="mediaTitle"        column="m_title"         />
+        <result property="mediaPosterPath"   column="m_poster_path"   />
+        <result property="mediaPosterLocalUrl" column="m_poster_local"/>
+        <result property="mediaType"         column="m_type"          />
+        <result property="mediaReleaseDate"  column="m_release_date"  />
+    </resultMap>
+
+    <select id="selectCastByMediaId" parameterType="Long" resultMap="KmMediaCastResult">
+        select c.id, c.media_id, c.person_id, c.credit_type, c.department, c.job,
+               c.`character` character_name, c.cast_order, c.create_time,
+               p.name p_name, p.profile_path p_profile_path, p.profile_local_url p_profile_local,
+               p.tmdb_id p_tmdb_id
+        from km_media_cast c
+        join km_person p on p.person_id = c.person_id and p.del_flag = '0'
+        where c.media_id = #{mediaId}
+        order by c.credit_type asc, c.cast_order asc
+    </select>
+
+    <select id="selectCreditsByPersonId" parameterType="Long" resultMap="KmMediaCastResult">
+        select c.id, c.media_id, c.person_id, c.credit_type, c.department, c.job,
+               c.`character` character_name, c.cast_order, c.create_time,
+               m.title m_title, m.poster_path m_poster_path, m.poster_local_url m_poster_local,
+               m.media_type m_type, m.release_date m_release_date
+        from km_media_cast c
+        join km_media m on m.media_id = c.media_id and m.del_flag = '0'
+        where c.person_id = #{personId}
+        order by m.release_date desc
+    </select>
+
+    <delete id="deleteByMediaId" parameterType="Long">
+        delete from km_media_cast where media_id = #{mediaId}
+    </delete>
+
+    <insert id="batchInsert">
+        insert into km_media_cast (media_id, person_id, credit_type, department, job, `character`, cast_order, create_time)
+        values
+        <foreach collection="list" item="c" separator=",">
+            (#{c.mediaId}, #{c.personId}, #{c.creditType}, #{c.department}, #{c.job}, #{c.character}, #{c.castOrder}, sysdate())
+        </foreach>
+    </insert>
+
+</mapper>

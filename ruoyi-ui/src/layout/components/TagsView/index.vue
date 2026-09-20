@@ -174,7 +174,7 @@ export default {
     isFirstView() {
       try {
         const tag = this.selectedTag && this.selectedTag.fullPath ? this.selectedTag : this.selectedDropdownTag
-        return tag.fullPath === '/index' || tag.fullPath === this.visitedViews[1].fullPath
+        return tag.fullPath === '/admin/index' || tag.fullPath === '/index' || tag.fullPath === this.visitedViews[1].fullPath
       } catch (err) {
         return false
       }
@@ -367,7 +367,7 @@ export default {
         if (view && view.name === 'Dashboard') {
           this.$router.replace({ path: '/redirect' + view.fullPath })
         } else {
-          this.$router.push('/')
+          this.$router.push('/admin')
         }
       }
     },

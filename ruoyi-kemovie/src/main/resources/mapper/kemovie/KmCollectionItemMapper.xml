@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.kemovie.mapper.KmCollectionItemMapper">
+
+    <select id="selectMediaByCollectionId" parameterType="Long" resultMap="com.ruoyi.kemovie.mapper.KmMediaMapper.KmMediaResult">
+        select m.* from km_media m
+        join km_collection_item i on i.media_id = m.media_id
+        where i.collection_id = #{collectionId} and m.del_flag = '0'
+        order by i.sort asc, i.id asc
+    </select>
+
+    <!-- 片单内影片：分页 + 与影片页一致的筛选/排序 -->
+    <select id="selectMediaOfCollectionPaged" resultMap="com.ruoyi.kemovie.mapper.KmMediaMapper.KmMediaResult">
+        select m.*, i.sort as _i_sort, i.id as _i_id
+        from km_media m
+        join km_collection_item i on i.media_id = m.media_id
+        <where>
+            i.collection_id = #{collectionId} and m.del_flag = '0'
+            <if test="q.title != null and q.title != ''"> and m.title like concat('%', #{q.title}, '%')</if>
+            <if test="q.mediaType != null and q.mediaType != ''"> and m.media_type = #{q.mediaType}</if>
+            <if test="q.region != null and q.region != ''"> and m.region like concat('%', #{q.region}, '%')</if>
+            <if test="q.genres != null and q.genres != ''"> and m.genres like concat('%', #{q.genres}, '%')</if>
+            <if test="q.year != null"> and year(m.release_date) = #{q.year}</if>
+            <if test="q.minRating != null">
+                <choose>
+                    <when test="q.ratingSource == 'tmdb'"> and m.vote_average &gt;= #{q.minRating}</when>
+                    <when test="q.ratingSource == 'site'"> and m.rating_avg &gt;= #{q.minRating}</when>
+                    <otherwise> and (m.rating_avg &gt;= #{q.minRating} or (coalesce(m.rating_avg, 0) = 0 and m.vote_average &gt;= #{q.minRating}))</otherwise>
+                </choose>
+            </if>
+            <if test="(q.platformNames != null and q.platformNames.size() > 0) or (q.platform != null and q.platform != '') or (q.offerType != null and q.offerType != '')">
+                and exists (select 1 from km_media_release r where r.media_id = m.media_id
+                    <if test="q.platformNames != null and q.platformNames.size() > 0">
+                        and (
+                        <foreach collection="q.platformNames" item="pn" separator=" or ">
+                            r.platform like concat(#{pn}, '%')
+                        </foreach>
+                        )
+                    </if>
+                    <if test="(q.platformNames == null or q.platformNames.size() == 0) and q.platform != null and q.platform != ''"> and r.platform = #{q.platform}</if>
+                    <if test="q.offerType != null and q.offerType != ''"> and r.offer_type = #{q.offerType}</if>
+                )
+            </if>
+            <if test="q.phase == 'upcoming'">
+                and (
+                    coalesce((select min(r.online_date) from km_media_release r where r.media_id = m.media_id), m.release_date) &gt; curdate()
+                    or m.status in ('Planned', 'In Production', 'Post Production')
+                )
+            </if>
+            <if test="q.phase == 'airing'">
+                and (
+                    (m.media_type = 'tv' and m.status = 'Returning Series')
+                    or (m.media_type = 'movie'
+                        and coalesce((select min(r.online_date) from km_media_release r where r.media_id = m.media_id), m.release_date) &lt;= curdate()
+                        and coalesce((select min(r.online_date) from km_media_release r where r.media_id = m.media_id), m.release_date) &gt;= date_sub(curdate(), interval 60 day))
+                )
+            </if>
+            <if test="q.phase == 'ended'">
+                and (
+                    (m.media_type = 'tv' and m.status in ('Ended', 'Canceled'))
+                    or (m.media_type = 'movie'
+                        and coalesce((select min(r.online_date) from km_media_release r where r.media_id = m.media_id), m.release_date) is not null
+                        and coalesce((select min(r.online_date) from km_media_release r where r.media_id = m.media_id), m.release_date) &lt; date_sub(curdate(), interval 60 day))
+                )
+            </if>
+        </where>
+        <choose>
+            <when test="q.sortBy == 'rating'">
+                order by (
+                    (coalesce(m.vote_count,0) + coalesce(m.rating_count,0)) * coalesce(nullif(m.rating_avg,0), m.vote_average, 0)
+                    + 25 * 6.3
+                ) / (coalesce(m.vote_count,0) + coalesce(m.rating_count,0) + 25) desc,
+                (coalesce(m.vote_count,0) + coalesce(m.rating_count,0)) desc</when>
+            <when test="q.sortBy == 'popular'">order by m.popularity desc, m.hot_score desc</when>
+            <when test="q.sortBy == 'recent'">order by coalesce((select min(r.online_date) from km_media_release r where r.media_id = m.media_id), m.release_date) desc</when>
+            <when test="q.sortBy == 'newest'">order by m.create_time desc</when>
+            <otherwise>order by i.sort asc, i.id asc</otherwise>
+        </choose>
+    </select>
+
+    <select id="selectCoverPosters" resultType="String">
+        select coalesce(m.poster_local_url, m.poster_path) from km_media m
+        join km_collection_item i on i.media_id = m.media_id
+        where i.collection_id = #{collectionId} and m.del_flag = '0'
+          and (m.poster_local_url is not null or m.poster_path is not null)
+        order by i.sort asc, i.id asc
+        limit #{limit}
+    </select>
+
+    <select id="countItem" resultType="int">
+        select count(*) from km_collection_item where collection_id = #{collectionId} and media_id = #{mediaId}
+    </select>
+
+    <insert id="insertItem" parameterType="KmCollectionItem">
+        insert into km_collection_item (collection_id, media_id, sort, note, create_time)
+        values (#{collectionId}, #{mediaId}, ifnull(#{sort},0), #{note}, sysdate())
+    </insert>
+
+    <delete id="deleteItem">
+        delete from km_collection_item where collection_id = #{collectionId} and media_id = #{mediaId}
+    </delete>
+
+    <delete id="deleteByCollectionId" parameterType="Long">
+        delete from km_collection_item where collection_id = #{collectionId}
+    </delete>
+</mapper>

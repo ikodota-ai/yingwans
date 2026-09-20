@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.kemovie.mapper.KmMediaResourceMapper">
+
+    <resultMap type="com.ruoyi.kemovie.domain.KmMediaResource" id="KmMediaResourceResult">
+        <id     property="resourceId" column="resource_id"/>
+        <result property="mediaId"    column="media_id"/>
+        <result property="groupName"  column="group_name"/>
+        <result property="platform"   column="platform"/>
+        <result property="url"        column="url"/>
+        <result property="pwd"        column="pwd"/>
+        <result property="groupOrder" column="group_order"/>
+        <result property="source"     column="source"/>
+        <result property="createBy"   column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy"   column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <select id="selectByMediaId" parameterType="Long" resultMap="KmMediaResourceResult">
+        select resource_id, media_id, group_name, platform, url, pwd, group_order, source,
+               create_by, create_time, update_by, update_time
+        from km_media_resource
+        where media_id = #{mediaId}
+        order by group_order asc, resource_id asc
+    </select>
+
+    <insert id="insertKmMediaResource" parameterType="com.ruoyi.kemovie.domain.KmMediaResource"
+            useGeneratedKeys="true" keyProperty="resourceId">
+        insert into km_media_resource (
+            media_id, group_name, platform, url, pwd, group_order, source, create_by, create_time
+        ) values (
+            #{mediaId}, #{groupName}, #{platform}, #{url}, #{pwd},
+            ifnull(#{groupOrder}, 0), ifnull(#{source}, 'legacy'), #{createBy}, sysdate()
+        )
+    </insert>
+
+    <delete id="deleteByMediaAndSource">
+        delete from km_media_resource where media_id = #{mediaId} and source = #{source}
+    </delete>
+
+    <update id="updateKmMediaResource" parameterType="com.ruoyi.kemovie.domain.KmMediaResource">
+        update km_media_resource
+        set group_name  = #{groupName},
+            platform    = #{platform},
+            url         = #{url},
+            pwd         = #{pwd},
+            update_by   = #{updateBy},
+            update_time = sysdate()
+        where resource_id = #{resourceId}
+    </update>
+
+    <delete id="deleteById" parameterType="Long">
+        delete from km_media_resource where resource_id = #{resourceId}
+    </delete>
+</mapper>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.kemovie.mapper.KmDashboardMapper">
+
+    <resultMap type="KmDashboardOverview" id="KmDashboardOverviewResult">
+        <result property="mediaTotal"      column="media_total"/>
+        <result property="movieTotal"      column="movie_total"/>
+        <result property="tvTotal"         column="tv_total"/>
+        <result property="visibleTotal"    column="visible_total"/>
+        <result property="personTotal"     column="person_total"/>
+        <result property="memberTotal"     column="member_total"/>
+        <result property="collectionTotal" column="collection_total"/>
+        <result property="mdlTotal"        column="mdl_total"/>
+        <result property="upcomingTotal"   column="upcoming_total"/>
+        <result property="likeTotal"       column="like_total"/>
+        <result property="wishTotal"       column="wish_total"/>
+        <result property="watchTotal"      column="watch_total"/>
+    </resultMap>
+
+    <resultMap id="MediaCardResult" type="KmMedia">
+        <id     property="mediaId"        column="media_id"/>
+        <result property="mediaType"      column="media_type"/>
+        <result property="title"          column="title"/>
+        <result property="posterPath"     column="poster_path"/>
+        <result property="posterLocalUrl" column="poster_local_url"/>
+        <result property="releaseDate"    column="release_date"/>
+        <result property="onlineDate"     column="online_date"/>
+        <result property="status"         column="status"/>
+        <result property="voteAverage"    column="vote_average"/>
+        <result property="popularity"     column="popularity"/>
+        <result property="visible"        column="visible"/>
+        <result property="createTime"     column="create_time"/>
+    </resultMap>
+
+    <select id="selectOverview" resultMap="KmDashboardOverviewResult">
+        select
+            (select count(*) from km_media where del_flag = '0')                              as media_total,
+            (select count(*) from km_media where del_flag = '0' and media_type = 'movie')    as movie_total,
+            (select count(*) from km_media where del_flag = '0' and media_type = 'tv')       as tv_total,
+            (select count(*) from km_media where del_flag = '0' and visible = '0')           as visible_total,
+            (select count(*) from km_person)                                                  as person_total,
+            (select count(*) from km_member where del_flag = '0')                            as member_total,
+            (select count(*) from km_collection where del_flag = '0')                        as collection_total,
+            (select count(*) from km_mdl_source)                                             as mdl_total,
+            (select count(*) from km_media m
+              where m.del_flag = '0' and (
+                  (select min(r.online_date) from km_media_release r where r.media_id = m.media_id) &gt; curdate()
+                  or m.status in ('Planned', 'In Production', 'Post Production')))           as upcoming_total,
+            (select coalesce(sum(like_count), 0) from km_media where del_flag = '0')         as like_total,
+            (select coalesce(sum(wish_count), 0) from km_media where del_flag = '0')         as wish_total,
+            (select coalesce(sum(watched_count), 0) from km_media where del_flag = '0')      as watch_total
+    </select>
+
+    <select id="selectRecentMedia" resultMap="MediaCardResult">
+        select media_id, media_type, title, poster_path, poster_local_url, release_date,
+               status, vote_average, popularity, visible, create_time
+        from km_media
+        where del_flag = '0'
+        order by media_id desc
+        limit #{limit}
+    </select>
+
+    <select id="selectUpcomingMedia" resultMap="MediaCardResult">
+        select m.media_id, m.media_type, m.title, m.poster_path, m.poster_local_url, m.release_date,
+               m.status, m.vote_average, m.popularity, m.visible, m.create_time,
+               (select min(r.online_date) from km_media_release r where r.media_id = m.media_id) as online_date
+        from km_media m
+        where m.del_flag = '0' and (
+            (select min(r.online_date) from km_media_release r where r.media_id = m.media_id) &gt; curdate()
+            or m.status in ('Planned', 'In Production', 'Post Production'))
+        order by coalesce(online_date, m.release_date) asc, m.media_id desc
+        limit #{limit}
+    </select>
+
+</mapper>

@@ -24,6 +24,7 @@ import com.ruoyi.common.utils.file.FileUploadUtils;
 import com.ruoyi.common.utils.file.FileUtils;
 import com.ruoyi.common.utils.file.MimeTypeUtils;
 import com.ruoyi.framework.web.service.TokenService;
+import com.ruoyi.kemovie.storage.OssUploader;
 import com.ruoyi.system.service.ISysUserService;
 
 /**
@@ -37,6 +38,9 @@ public class SysProfileController extends BaseController
 {
     @Autowired
     private ISysUserService userService;
+
+    @Autowired(required = false)
+    private OssUploader ossUploader;
 
     @Autowired
     private TokenService tokenService;
@@ -128,11 +132,20 @@ public class SysProfileController extends BaseController
         if (!file.isEmpty())
         {
             LoginUser loginUser = getLoginUser();
-            String avatar = FileUploadUtils.upload(RuoYiConfig.getAvatarPath(), file, MimeTypeUtils.IMAGE_EXTENSION, true);
+            String avatar;
+            if (ossUploader != null)
+            {
+                FileUploadUtils.assertAllowed(file, MimeTypeUtils.IMAGE_EXTENSION);
+                avatar = ossUploader.uploadMultipart(file, "avatar");
+            }
+            else
+            {
+                avatar = FileUploadUtils.upload(RuoYiConfig.getAvatarPath(), file, MimeTypeUtils.IMAGE_EXTENSION, true);
+            }
             if (userService.updateUserAvatar(loginUser.getUserId(), avatar))
             {
                 String oldAvatar = loginUser.getUser().getAvatar();
-                if (StringUtils.isNotEmpty(oldAvatar))
+                if (StringUtils.isNotEmpty(oldAvatar) && oldAvatar.startsWith("/profile"))
                 {
                     FileUtils.deleteFile(RuoYiConfig.getProfile() + FileUtils.stripPrefix(oldAvatar));
                 }

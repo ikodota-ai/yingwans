@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.kemovie.mapper.KmPersonMapper">
+
+    <resultMap type="com.ruoyi.kemovie.domain.KmPerson" id="KmPersonResult">
+        <id     property="personId"        column="person_id"        />
+        <result property="tmdbId"          column="tmdb_id"          />
+        <result property="imdbId"          column="imdb_id"          />
+        <result property="name"            column="name"             />
+        <result property="originalName"    column="original_name"    />
+        <result property="alsoKnownAs"     column="also_known_as"    />
+        <result property="gender"          column="gender"           />
+        <result property="birthday"        column="birthday"         />
+        <result property="deathday"        column="deathday"         />
+        <result property="placeOfBirth"    column="place_of_birth"   />
+        <result property="knownFor"        column="known_for"        />
+        <result property="biography"       column="biography"        />
+        <result property="profilePath"     column="profile_path"     />
+        <result property="profileLocalUrl" column="profile_local_url"/>
+        <result property="popularity"      column="popularity"       />
+        <result property="homepage"        column="homepage"         />
+        <result property="lastSyncedAt"    column="last_synced_at"   />
+        <result property="delFlag"         column="del_flag"         />
+        <result property="createBy"        column="create_by"        />
+        <result property="createTime"      column="create_time"      />
+        <result property="updateBy"        column="update_by"        />
+        <result property="updateTime"      column="update_time"      />
+        <result property="remark"          column="remark"           />
+    </resultMap>
+
+    <sql id="selectPersonVo">
+        select person_id, tmdb_id, imdb_id, name, original_name, also_known_as, gender,
+               birthday, deathday, place_of_birth, known_for, biography, profile_path,
+               profile_local_url, popularity, homepage, last_synced_at, del_flag,
+               create_by, create_time, update_by, update_time, remark
+        from km_person
+    </sql>
+
+    <select id="selectPersonById" parameterType="Long" resultMap="KmPersonResult">
+        <include refid="selectPersonVo"/>
+        where person_id = #{personId} and del_flag = '0'
+    </select>
+
+    <select id="selectPersonByTmdbId" parameterType="Long" resultMap="KmPersonResult">
+        <include refid="selectPersonVo"/>
+        where tmdb_id = #{tmdbId} and del_flag = '0'
+    </select>
+
+    <select id="selectPersonList" parameterType="com.ruoyi.kemovie.domain.KmPerson" resultMap="KmPersonResult">
+        <include refid="selectPersonVo"/>
+        <where>
+            del_flag = '0'
+            <if test="name != null and name != ''"> and (name like concat('%', #{name}, '%') or original_name like concat('%', #{name}, '%'))</if>
+            <if test="knownFor != null and knownFor != ''"> and known_for = #{knownFor}</if>
+        </where>
+        order by popularity desc, person_id desc
+    </select>
+
+    <insert id="insertPerson" parameterType="com.ruoyi.kemovie.domain.KmPerson" useGeneratedKeys="true" keyProperty="personId">
+        insert into km_person (
+            tmdb_id, imdb_id, name, original_name, also_known_as, gender, birthday, deathday,
+            place_of_birth, known_for, biography, profile_path, popularity, homepage,
+            last_synced_at, del_flag, create_by, create_time
+        ) values (
+            #{tmdbId}, #{imdbId}, #{name}, #{originalName}, #{alsoKnownAs}, #{gender}, #{birthday}, #{deathday},
+            #{placeOfBirth}, #{knownFor}, #{biography}, #{profilePath}, #{popularity}, #{homepage},
+            #{lastSyncedAt}, '0', #{createBy}, sysdate()
+        )
+    </insert>
+
+    <update id="updatePerson" parameterType="com.ruoyi.kemovie.domain.KmPerson">
+        update km_person
+        <set>
+            <if test="imdbId != null"> imdb_id = #{imdbId},</if>
+            <if test="name != null"> name = #{name},</if>
+            <if test="originalName != null"> original_name = #{originalName},</if>
+            <if test="alsoKnownAs != null"> also_known_as = #{alsoKnownAs},</if>
+            <if test="gender != null"> gender = #{gender},</if>
+            <if test="birthday != null"> birthday = #{birthday},</if>
+            <if test="deathday != null"> deathday = #{deathday},</if>
+            <if test="placeOfBirth != null"> place_of_birth = #{placeOfBirth},</if>
+            <if test="knownFor != null"> known_for = #{knownFor},</if>
+            <if test="biography != null"> biography = #{biography},</if>
+            <if test="profilePath != null"> profile_path = #{profilePath},</if>
+            <if test="profileLocalUrl != null"> profile_local_url = #{profileLocalUrl},</if>
+            <if test="popularity != null"> popularity = #{popularity},</if>
+            <if test="homepage != null"> homepage = #{homepage},</if>
+            <if test="lastSyncedAt != null"> last_synced_at = #{lastSyncedAt},</if>
+            <if test="updateBy != null"> update_by = #{updateBy},</if>
+            <if test="remark != null"> remark = #{remark},</if>
+            update_time = sysdate()
+        </set>
+        where person_id = #{personId}
+    </update>
+
+    <update id="deletePersonByIds">
+        update km_person set del_flag = '2' where person_id in
+        <foreach collection="array" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </update>
+
+
+    <select id="selectLocalImagePersons" resultType="java.util.HashMap">
+        select person_id as personId, profile_local_url as profileLocalUrl
+        from km_person
+        where del_flag = '0' and profile_local_url like '/profile%'
+    </select>
+</mapper>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.kemovie.mapper.KmProviderMapper">
+
+    <resultMap type="KmProvider" id="KmProviderResult">
+        <id     property="providerId" column="provider_id"/>
+        <result property="name"       column="name"/>
+        <result property="slug"       column="slug"/>
+        <result property="siteUrl"    column="site_url"/>
+        <result property="logoUrl"    column="logo_url"/>
+        <result property="region"     column="region"/>
+        <result property="source"     column="source"/>
+        <result property="enabled"    column="enabled"/>
+        <result property="sort"       column="sort"/>
+        <result property="createBy"   column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy"   column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark"     column="remark"/>
+    </resultMap>
+
+    <sql id="selectKmProviderVo">
+        select provider_id, name, slug, site_url, logo_url, region, source, enabled, sort,
+               create_by, create_time, update_by, update_time, remark
+        from km_provider
+    </sql>
+
+    <select id="selectKmProviderById" parameterType="Long" resultMap="KmProviderResult">
+        <include refid="selectKmProviderVo"/>
+        where provider_id = #{providerId}
+    </select>
+
+    <select id="selectKmProviderList" parameterType="KmProvider" resultMap="KmProviderResult">
+        <include refid="selectKmProviderVo"/>
+        <where>
+            <if test="name != null and name != ''"> and name like concat('%', #{name}, '%')</if>
+            <if test="enabled != null and enabled != ''"> and enabled = #{enabled}</if>
+        </where>
+        order by sort asc, provider_id asc
+    </select>
+
+    <select id="selectEnabled" resultMap="KmProviderResult">
+        <include refid="selectKmProviderVo"/>
+        where enabled = '0'
+        order by sort asc, provider_id asc
+    </select>
+
+    <select id="selectMediaProviderIds" parameterType="Long" resultType="java.lang.Long">
+        select p.provider_id
+        from km_provider p
+        join km_media_release r on r.source = 'custom' and r.platform = p.name and r.media_id = #{mediaId}
+        group by p.provider_id, p.sort
+        order by p.sort asc, p.provider_id asc
+    </select>
+
+    <insert id="insertKmProvider" parameterType="KmProvider" useGeneratedKeys="true" keyProperty="providerId">
+        insert into km_provider (name, slug, site_url, logo_url, region, source, enabled, sort, create_by, create_time, remark)
+        values (#{name}, #{slug}, #{siteUrl}, #{logoUrl}, #{region}, ifnull(#{source},'custom'), ifnull(#{enabled},'0'),
+                ifnull(#{sort},0), #{createBy}, sysdate(), #{remark})
+    </insert>
+
+    <update id="updateKmProvider" parameterType="KmProvider">
+        update km_provider
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="slug != null">slug = #{slug},</if>
+            <if test="siteUrl != null">site_url = #{siteUrl},</if>
+            <if test="logoUrl != null">logo_url = #{logoUrl},</if>
+            <if test="region != null">region = #{region},</if>
+            <if test="source != null and source != ''">source = #{source},</if>
+            <if test="enabled != null and enabled != ''">enabled = #{enabled},</if>
+            <if test="sort != null">sort = #{sort},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            update_time = sysdate()
+        </set>
+        where provider_id = #{providerId}
+    </update>
+
+    <delete id="deleteKmProviderByIds">
+        delete from km_provider where provider_id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">#{id}</foreach>
+    </delete>
+
+</mapper>

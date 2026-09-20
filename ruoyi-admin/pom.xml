@@ -54,6 +54,13 @@
             <artifactId>ruoyi-generator</artifactId>
         </dependency>
 
+        <!-- 影弯业务模块-->
+        <dependency>
+            <groupId>com.ruoyi</groupId>
+            <artifactId>ruoyi-kemovie</artifactId>
+            <version>3.9.2</version>
+        </dependency>
+
     </dependencies>
 
     <build>

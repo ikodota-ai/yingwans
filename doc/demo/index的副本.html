@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kemovie · 发现</title>
+<style>
+:root{
+  --bg-base:#0d0e12; --bg-surface:#16181f; --bg-elevated:#1f232d; --border:#2a2e39;
+  --text-primary:#f5f6f8; --text-secondary:#9aa0ac; --text-muted:#6b7280;
+  --brand:#e8b84b; --brand-hover:#f2c85f; --accent:#4f9dff;
+  --success:#3fb984; --warning:#e8a13a; --danger:#e5484d; --wish:#c07be0;
+  --radius-card:10px; --radius-poster:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg-base);color:var(--text-primary);
+  font-family:"PingFang SC","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;
+  line-height:1.6;-webkit-font-smoothing:antialiased;
+}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1200px;margin:0 auto;padding:0 24px}
+
+/* ---------- 顶部导航 ---------- */
+header{position:sticky;top:0;z-index:50;background:rgba(13,14,18,.85);
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.nav{display:flex;align-items:center;gap:28px;height:64px}
+.logo{font-size:22px;font-weight:700;color:var(--brand);letter-spacing:.5px}
+.logo span{color:var(--text-primary)}
+.nav-links{display:flex;gap:22px;font-size:15px}
+.nav-links a{color:var(--text-secondary);transition:color .2s}
+.nav-links a:hover,.nav-links a.active{color:var(--text-primary)}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:18px}
+.search{background:var(--bg-surface);border:1px solid var(--border);border-radius:20px;
+  padding:7px 16px;color:var(--text-secondary);font-size:14px;width:200px}
+.bell{position:relative;font-size:20px;cursor:pointer}
+.bell .badge{position:absolute;top:-6px;right:-8px;background:var(--brand);color:#111;
+  font-size:11px;font-weight:700;border-radius:10px;padding:1px 6px}
+.avatar{width:34px;height:34px;border-radius:50%;
+  background:linear-gradient(135deg,#e8b84b,#c07be0)}
+
+/* ---------- 主视觉 Banner ---------- */
+.hero{position:relative;height:420px;border-radius:16px;overflow:hidden;margin:24px 0 40px;
+  display:flex;align-items:flex-end;
+  background:linear-gradient(120deg,#2a1e3d,#3d2a1e 60%,#1a2a3d)}
+.hero::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(90deg,rgba(13,14,18,.92) 30%,rgba(13,14,18,.2))}
+.hero-body{position:relative;z-index:2;padding:40px}
+.hero-tag{color:var(--brand);font-weight:600;font-size:13px;letter-spacing:2px}
+.hero-title{font-size:40px;font-weight:700;margin:8px 0}
+.hero-meta{color:var(--text-secondary);font-size:14px;margin-bottom:20px}
+.hero-meta .star{color:var(--brand);font-weight:700}
+.btns{display:flex;gap:12px}
+.btn{border:none;border-radius:8px;padding:11px 22px;font-size:14px;font-weight:600;
+  cursor:pointer;transition:.2s}
+.btn-primary{background:var(--brand);color:#111}
+.btn-primary:hover{background:var(--brand-hover)}
+.btn-ghost{background:rgba(255,255,255,.1);color:var(--text-primary)}
+.btn-ghost:hover{background:rgba(255,255,255,.2)}
+
+/* ---------- 区块 ---------- */
+.section{margin-bottom:44px}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.section-title{font-size:20px;font-weight:600;display:flex;align-items:center;gap:8px}
+.more{color:var(--text-secondary);font-size:13px;cursor:pointer}
+.more:hover{color:var(--brand)}
+
+/* ---------- 横向滑轨 ---------- */
+.rail{display:flex;gap:16px;overflow-x:auto;padding-bottom:8px;scrollbar-width:thin}
+.rail::-webkit-scrollbar{height:6px}
+.rail::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* ---------- 海报卡 ---------- */
+.card{width:160px;flex:0 0 auto;cursor:pointer;transition:transform .2s}
+.card:hover{transform:translateY(-4px)}
+.poster{position:relative;aspect-ratio:2/3;border-radius:var(--radius-poster);
+  overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.poster .art{position:absolute;inset:0}
+.poster .grad{position:absolute;inset:0;
+  background:linear-gradient(180deg,transparent 55%,rgba(0,0,0,.85))}
+.rank-badge{position:absolute;top:0;left:0;background:var(--brand);color:#111;
+  font-weight:700;font-size:14px;padding:4px 10px;border-bottom-right-radius:8px}
+.poster .rating{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);
+  color:var(--brand);font-size:12px;font-weight:700;border-radius:4px;padding:2px 6px}
+.poster-actions{position:absolute;bottom:8px;right:8px;display:flex;gap:6px;
+  opacity:0;transition:opacity .2s}
+.card:hover .poster-actions{opacity:1}
+.pa-btn{width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.65);
+  display:flex;align-items:center;justify-content:center;font-size:14px;
+  border:1px solid rgba(255,255,255,.2)}
+.pa-btn:hover{background:var(--brand);color:#111}
+.card-title{font-size:14px;margin-top:8px;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis}
+.card-sub{font-size:12px;color:var(--text-muted)}
+
+/* 平台徽标 */
+.platform{display:inline-flex;align-items:center;gap:5px;font-size:11px;
+  background:var(--bg-elevated);border:1px solid var(--border);border-radius:4px;
+  padding:2px 7px;margin-top:6px;color:var(--text-secondary)}
+.dot{width:8px;height:8px;border-radius:50%}
+
+/* ---------- 片单卡 ---------- */
+.col-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.col-card{background:var(--bg-surface);border:1px solid var(--border);
+  border-radius:var(--radius-card);overflow:hidden;cursor:pointer;transition:.2s}
+.col-card:hover{border-color:var(--brand);transform:translateY(-3px)}
+.col-cover{display:grid;grid-template-columns:1fr 1fr;height:140px}
+.col-cover div{background-size:cover}
+.col-body{padding:12px 14px}
+.col-name{font-size:15px;font-weight:600}
+.col-meta{font-size:12px;color:var(--text-muted);margin-top:4px;
+  display:flex;justify-content:space-between;align-items:center}
+.src-tag{font-size:11px;border-radius:4px;padding:1px 7px}
+.src-mdl{background:rgba(192,123,224,.15);color:var(--wish)}
+.src-tmdb{background:rgba(79,157,255,.15);color:var(--accent)}
+.src-sys{background:rgba(232,184,75,.15);color:var(--brand)}
+
+footer{border-top:1px solid var(--border);padding:28px 0;color:var(--text-muted);
+  font-size:13px;text-align:center;margin-top:40px}
+
+@media(max-width:768px){
+  .nav-links,.search{display:none}
+  .col-grid{grid-template-columns:1fr 1fr}
+  .hero{height:320px}.hero-title{font-size:28px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <div class="logo">Ke<span>movie</span></div>
+    <nav class="nav-links">
+      <a class="active">发现</a><a>片单</a><a>我的片库</a><a>订阅提醒</a>
+    </nav>
+    <div class="nav-right">
+      <input class="search" placeholder="搜索影片、片单…" />
+      <div class="bell">🔔<span class="badge">3</span></div>
+      <div class="avatar"></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- 主视觉 -->
+  <section class="hero">
+    <div class="hero-body">
+      <div class="hero-tag">本周热门 · TOP 1</div>
+      <h1 class="hero-title">苍兰诀</h1>
+      <div class="hero-meta"><span class="star">★ 8.7</span> · 2024 · 中国大陆 · 奇幻 / 爱情</div>
+      <div class="btns">
+        <button class="btn btn-primary">♡ 想看</button>
+        <button class="btn btn-ghost">🔔 订阅上线提醒</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 热门排行榜 -->
+  <section class="section">
+    <div class="section-head">
+      <div class="section-title">🔥 热门排行榜</div>
+      <div class="more">查看全部 ›</div>
+    </div>
+    <div class="rail" id="railHot"></div>
+  </section>
+
+  <!-- 近期上线 -->
+  <section class="section">
+    <div class="section-head">
+      <div class="section-title">🆕 近期上线</div>
+      <div class="more">查看全部 ›</div>
+    </div>
+    <div class="rail" id="railNew"></div>
+  </section>
+
+  <!-- 精选片单 -->
+  <section class="section">
+    <div class="section-head">
+      <div class="section-title">📚 精选片单</div>
+      <div class="more">查看全部 ›</div>
+    </div>
+    <div class="col-grid" id="colGrid"></div>
+  </section>
+
+</div>
+
+<footer>Kemovie · 私人影库与上线追踪 · 静态视觉 Demo（占位海报，无真实数据）</footer>
+
+<script>
+// 占位海报：用渐变模拟，真实环境替换为 TMDB 图 / poster_local_url
+const grads=[
+ "linear-gradient(135deg,#3d2a5e,#1a2a4d)","linear-gradient(135deg,#5e2a3d,#2a1a3d)",
+ "linear-gradient(135deg,#2a5e4d,#1a3d3d)","linear-gradient(135deg,#5e4a2a,#3d2a1a)",
+ "linear-gradient(135deg,#2a3d5e,#1a1a3d)","linear-gradient(135deg,#5e2a4d,#3d1a2a)",
+ "linear-gradient(135deg,#3d5e2a,#2a3d1a)","linear-gradient(135deg,#2a4d5e,#1a2a3d)"];
+const platforms=[
+ {n:"Netflix",c:"#e5484d"},{n:"Disney+",c:"#4f9dff"},{n:"爱奇艺",c:"#3fb984"},
+ {n:"腾讯视频",c:"#e8a13a"},{n:"芒果TV",c:"#e8b84b"}];
+const rand=a=>a[Math.floor(Math.random()*a.length)];
+const ratingColor=r=>r>=7?"var(--success)":r>=4?"var(--warning)":"var(--danger)";
+
+function posterCard(o){
+  const g=rand(grads);
+  const rankHtml=o.rank?`<div class="rank-badge">${o.rank}</div>`:"";
+  const pf=o.platform?rand(platforms):null;
+  const pfHtml=pf?`<div class="platform"><span class="dot" style="background:${pf.c}"></span>${pf.n} · ${o.date}</div>`:`<div class="card-sub">${o.year}</div>`;
+  return `<div class="card">
+    <div class="poster">
+      <div class="art" style="background:${g}"></div>
+      <div class="grad"></div>
+      ${rankHtml}
+      <div class="rating" style="color:${ratingColor(o.score)}">★ ${o.score}</div>
+      <div class="poster-actions">
+        <div class="pa-btn" title="想看">♡</div>
+        <div class="pa-btn" title="看过">✓</div>
+        <div class="pa-btn" title="订阅">🔔</div>
+      </div>
+    </div>
+    <div class="card-title">${o.title}</div>
+    ${pfHtml}
+  </div>`;
+}
+
+const titlesHot=["繁花","三体","漫长的季节","狂飙","去有风的地方","莲花楼","长相思","宁安如梦"];
+const titlesNew=["黑暗荣耀","鱿鱼游戏2","东京复仇者","咒术回战","进击的巨人","孤独的美食家","请回答1988","信号"];
+
+const railHot=document.getElementById("railHot");
+titlesHot.forEach((t,i)=>railHot.innerHTML+=posterCard(
+  {title:t,rank:i+1,score:(9.2-i*0.3).toFixed(1),year:2020+i%5}));
+
+const railNew=document.getElementById("railNew");
+titlesNew.forEach((t,i)=>railNew.innerHTML+=posterCard(
+  {title:t,platform:true,date:`06-${(10+i).toString().padStart(2,'0')}`,score:(8.5-i*0.2).toFixed(1)}));
+
+const cols=[
+ {n:"2024 韩剧必追",cnt:24,src:"src-mdl",tag:"MDL 抓取"},
+ {n:"欧洲电影精选",cnt:18,src:"src-tmdb",tag:"TMDB"},
+ {n:"编辑部私藏",cnt:32,src:"src-sys",tag:"系统"},
+ {n:"金在英作品集",cnt:12,src:"src-mdl",tag:"MDL 抓取"}];
+const colGrid=document.getElementById("colGrid");
+cols.forEach(c=>{
+  const g=[rand(grads),rand(grads),rand(grads),rand(grads)];
+  colGrid.innerHTML+=`<div class="col-card">
+    <div class="col-cover">
+      <div style="background:${g[0]}"></div><div style="background:${g[1]}"></div>
+      <div style="background:${g[2]}"></div><div style="background:${g[3]}"></div>
+    </div>
+    <div class="col-body">
+      <div class="col-name">${c.n}</div>
+      <div class="col-meta"><span>${c.cnt} 部影片</span>
+        <span class="src-tag ${c.src}">${c.tag}</span></div>
+    </div>
+  </div>`;
+});
+</script>
+</body>
+</html>

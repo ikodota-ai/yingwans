@@ -1,6 +1,8 @@
 package com.ruoyi.framework.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import jakarta.servlet.Filter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -45,6 +47,13 @@ public class SecurityConfig
      */
     @Autowired
     private JwtAuthenticationTokenFilter authenticationTokenFilter;
+
+    /**
+     * 前台会员令牌过滤器（来自 ruoyi-kemovie，按 Bean 名注入，避免模块反向依赖）。
+     */
+    @Autowired
+    @Qualifier("memberTokenFilter")
+    private Filter memberTokenFilter;
     
     /**
      * 跨域过滤器
@@ -101,6 +110,8 @@ public class SecurityConfig
                 permitAllUrl.getUrls().forEach(url -> requests.requestMatchers(url).permitAll());
                 // 对于登录login 注册register 验证码captchaImage 允许匿名访问
                 requests.requestMatchers("/login", "/register", "/captchaImage").permitAll()
+                    // 前台会员登录/注册允许匿名访问
+                    .requestMatchers("/member/login", "/member/register").permitAll()
                     // 静态资源，可匿名访问
                     .requestMatchers(HttpMethod.GET, "/", "/*.html", "/**.html", "/**.css", "/**.js", "/profile/**").permitAll()
                     .requestMatchers("/swagger-ui.html", "/v3/api-docs/**", "/swagger-ui/**", "/druid/**").permitAll()
@@ -109,6 +120,8 @@ public class SecurityConfig
             })
             // 添加Logout filter
             .logout(logout -> logout.logoutUrl("/logout").logoutSuccessHandler(logoutSuccessHandler))
+            // 添加前台会员 token filter（先于管理端 JWT filter，二者互不干扰）
+            .addFilterBefore(memberTokenFilter, UsernamePasswordAuthenticationFilter.class)
             // 添加JWT filter
             .addFilterBefore(authenticationTokenFilter, UsernamePasswordAuthenticationFilter.class)
             // 添加CORS filter

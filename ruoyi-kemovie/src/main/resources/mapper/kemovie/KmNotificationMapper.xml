@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.kemovie.mapper.KmNotificationMapper">
+
+    <resultMap type="KmNotification" id="NotifyResult">
+        <id     property="notifyId"   column="notify_id"/>
+        <result property="userId"     column="user_id"/>
+        <result property="type"       column="type"/>
+        <result property="title"      column="title"/>
+        <result property="content"    column="content"/>
+        <result property="mediaId"    column="media_id"/>
+        <result property="channel"    column="channel"/>
+        <result property="isRead"     column="is_read"/>
+        <result property="sendStatus" column="send_status"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <select id="selectByUser" parameterType="Long" resultMap="NotifyResult">
+        select notify_id, user_id, type, title, content, media_id, channel, is_read, send_status, create_time
+        from km_notification where user_id = #{userId} order by create_time desc limit 200
+    </select>
+
+    <select id="countUnread" parameterType="Long" resultType="int">
+        select count(*) from km_notification where user_id = #{userId} and is_read = '0'
+    </select>
+
+    <insert id="insertNotification" parameterType="KmNotification" useGeneratedKeys="true" keyProperty="notifyId">
+        insert into km_notification (user_id, type, title, content, media_id, channel, is_read, send_status, create_time)
+        values (#{userId}, ifnull(#{type},'system'), #{title}, #{content}, #{mediaId}, ifnull(#{channel},'site'), '0', ifnull(#{sendStatus},'0'), sysdate())
+    </insert>
+
+    <update id="markRead">
+        update km_notification set is_read = '1' where user_id = #{userId} and notify_id = #{notifyId}
+    </update>
+
+    <update id="markAllRead" parameterType="Long">
+        update km_notification set is_read = '1' where user_id = #{userId} and is_read = '0'
+    </update>
+
+    <select id="selectUserEmail" parameterType="Long" resultType="String">
+        select email from km_member where member_id = #{userId} and del_flag = '0'
+    </select>
+
+    <select id="selectUserOpenid" parameterType="Long" resultType="String">
+        select wechat_openid from km_member where member_id = #{userId} and del_flag = '0'
+    </select>
+</mapper>

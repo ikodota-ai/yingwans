@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.kemovie.mapper.KmMediaReleaseMapper">
+
+    <resultMap type="KmMediaRelease" id="KmMediaReleaseResult">
+        <id     property="releaseId"    column="release_id"/>
+        <result property="mediaId"      column="media_id"/>
+        <result property="platform"     column="platform"/>
+        <result property="platformLogo" column="platform_logo"/>
+        <result property="country"      column="country"/>
+        <result property="offerType"    column="offer_type"/>
+        <result property="onlineDate"   column="online_date"/>
+        <result property="link"         column="link"/>
+        <result property="status"       column="status"/>
+        <result property="source"       column="source"/>
+    </resultMap>
+
+    <select id="selectByMediaId" parameterType="Long" resultMap="KmMediaReleaseResult">
+        select release_id, media_id, platform, platform_logo, country, offer_type, online_date, link, status, source
+        from km_media_release
+        where media_id = #{mediaId}
+        order by field(status,'available','upcoming','offline'), online_date desc
+    </select>
+
+    <insert id="insertKmMediaRelease" parameterType="KmMediaRelease" useGeneratedKeys="true" keyProperty="releaseId">
+        insert into km_media_release (media_id, platform, platform_logo, country, offer_type, online_date, link, status, source, create_time)
+        values (#{mediaId}, #{platform}, #{platformLogo}, #{country}, #{offerType}, #{onlineDate}, #{link}, #{status}, ifnull(#{source},'tmdb'), sysdate())
+    </insert>
+
+    <insert id="insertJwReleaseIgnore" parameterType="KmMediaRelease" useGeneratedKeys="true" keyProperty="releaseId">
+        insert ignore into km_media_release (media_id, platform, platform_logo, country, offer_type, online_date, link, status, source, create_time)
+        values (#{mediaId}, #{platform}, #{platformLogo}, #{country}, #{offerType}, #{onlineDate}, #{link}, #{status}, 'justwatch', sysdate())
+    </insert>
+
+    <delete id="deleteByMediaId" parameterType="Long">
+        delete from km_media_release where media_id = #{mediaId} and (source is null or source = 'tmdb')
+    </delete>
+
+    <select id="existsJwRelease" resultType="int">
+        select count(1) from km_media_release
+        where media_id = #{mediaId} and source = 'justwatch'
+          and platform = #{platform} and country = #{country}
+          and offer_type = #{offerType} and online_date = #{onlineDate}
+    </select>
+
+    <delete id="deleteCustomByMediaId" parameterType="Long">
+        delete from km_media_release where media_id = #{mediaId} and source = 'custom'
+    </delete>
+
+    <delete id="deleteCustomByPlatform" parameterType="String">
+        delete from km_media_release where platform = #{platform} and source = 'custom'
+    </delete>
+
+    <update id="updateCustomPlatformName">
+        update km_media_release set platform = #{newName}, update_time = sysdate()
+        where platform = #{oldName} and source = 'custom'
+    </update>
+
+    <update id="updateCustomPlatformLogo">
+        update km_media_release set platform_logo = #{logo}, update_time = sysdate()
+        where platform = #{platform} and source = 'custom'
+    </update>
+
+    <update id="updateCustomPlatformLink">
+        update km_media_release set link = #{link}, update_time = sysdate()
+        where platform = #{platform} and source = 'custom'
+    </update>
+
+    <select id="selectLocalLogoByPlatform" parameterType="String" resultType="String">
+        select platform_logo from km_media_release
+        where platform = #{platform} and platform_logo like '/profile%'
+        limit 1
+    </select>
+
+    <update id="updatePlatformLogoByPlatform">
+        update km_media_release set platform_logo = #{logo}, update_time = sysdate()
+        where platform = #{platform}
+    </update>
+
+</mapper>
